@@ -15,7 +15,6 @@ import (
 // @ID  get users
 // @Accept  json
 // @Produce  json
-// @Param body body ReqUser true "user register"
 // @Success 200 "success"
 // @Failure 404 "failure"
 // @Router /user [get]
@@ -33,7 +32,7 @@ func GetUsers(c *gin.Context) {
 // @ID  add user
 // @Accept  json
 // @Produce  json
-// @Param body body ReqUser true "user register"
+// @Param body body vm.ReqUser true "user register"
 // @Success 200 "success"
 // @Failure 404 "failure"
 // @Router /user/add [post]

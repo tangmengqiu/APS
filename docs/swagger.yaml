@@ -1,0 +1,64 @@
+basePath: /api/v1
+definitions:
+  vm.ReqUser:
+    properties:
+      name:
+        type: string
+      repo:
+        type: string
+      token:
+        type: string
+    type: object
+host: 127.0.0.1:8080
+info:
+  contact:
+    email: sctmq@zju.edu.cn
+    name: API Support
+    url: http://tangmengqiu.github.io
+  description: APS openAPI docs
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: APS API
+  version: "1.0"
+paths:
+  /user:
+    get:
+      consumes:
+      - application/json
+      description: get all user s
+      operationId: get users
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+        "404":
+          description: failure
+      summary: get all user
+      tags:
+      - 用户
+  /user/add:
+    post:
+      consumes:
+      - application/json
+      description: add user s
+      operationId: add user
+      parameters:
+      - description: user register
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/vm.ReqUser'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+        "404":
+          description: failure
+      summary: add user
+      tags:
+      - 用户
+swagger: "2.0"
