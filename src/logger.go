@@ -17,5 +17,5 @@ func init() {
 	logrus.SetOutput(os.Stdout)
 
 	// 设置日志级别为warn以上
-	logrus.SetLevel(logrus.WarnLevel)
+	logrus.SetLevel(logrus.InfoLevel)
 }

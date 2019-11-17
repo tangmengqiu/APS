@@ -2,6 +2,7 @@ package v1
 
 import (
 	src "APS/src"
+	"fmt"
 	vm "APS/src/api/vm"
 
 	"github.com/gin-gonic/gin"
@@ -15,8 +16,8 @@ import (
 // @ID  get users
 // @Accept  json
 // @Produce  json
-// @Success 200 "success"
-// @Failure 404 "failure"
+// @Success 200 {string} string "success"
+// @Failure 404 {string} string "failure"
 // @Router /user [get]
 func GetUsers(c *gin.Context) {
 	//auth
@@ -33,8 +34,8 @@ func GetUsers(c *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Param body body vm.ReqUser true "user register"
-// @Success 200 "success"
-// @Failure 404 "failure"
+// @Success 200 {string} string "success"
+// @Failure 404 {string} string "failure"
 // @Router /user/add [post]
 func AddUser(c *gin.Context) {
 	var u vm.ReqUser

@@ -3,11 +3,19 @@ package src
 import (
 	"fmt"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 func CheckCommit() {
 	for {
-		fmt.Println("i am checking!")
+
+		for _, p := range PersonPipe {
+			fmt.Println("i am checking!")
+			if err := p.GetCommitOfToday(); err != nil {
+				logrus.Info(err.Error())
+			}
+		}
 		time.Sleep(5 * time.Second)
 	}
 }

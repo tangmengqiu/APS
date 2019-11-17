@@ -14,6 +14,10 @@ type ReqUser struct{
 	Repo string `form:"repo" json:"repo"`
 }
 
+type CommitInfo struct{
+	
+}
+
 
 // MakeSuccess return success response
 func MakeSuccess(c *gin.Context, code int, content interface{}) {

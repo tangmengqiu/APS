@@ -14,7 +14,7 @@
         },
         "version": "1.0"
     },
-    "host": "127.0.0.1:8080",
+    "host": "localhost:8080",
     "basePath": "/api/v1",
     "paths": {
         "/user": {
@@ -33,10 +33,16 @@
                 "operationId": "get users",
                 "responses": {
                     "200": {
-                        "description": "success"
+                        "description": "success",
+                        "schema": {
+                            "type": "string"
+                        }
                     },
                     "404": {
-                        "description": "failure"
+                        "description": "failure",
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 }
             }
@@ -68,10 +74,16 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "success"
+                        "description": "success",
+                        "schema": {
+                            "type": "string"
+                        }
                     },
                     "404": {
-                        "description": "failure"
+                        "description": "failure",
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 }
             }
