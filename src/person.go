@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 
+	ding "APS/tools/ding"
 	"github.com/google/go-github/v28/github"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
@@ -55,19 +56,34 @@ func (p *Person) GetCommitOfToday() error {
 	// list all repositories for the authenticated user
 	commits, _, err := client.Repositories.ListCommits(ctx, p.Name, p.Repo, nil)
 	if err != nil {
-		logrus.Info(err.Error())
+		logrus.WithFields(logrus.Fields{
+			"event": "Get github commits",
+		}).Error(err.Error())
 		return err
 	}
 	numOfCommits := len(commits)
+	if p.CommitTotal == 0 {
+		//first add this user
+		//push welcome msg
+		var req ding.Req
+		req.MakeMessage(p.Name, GlobalConfig.DingUrl, "欢迎新加入的朋友", p.CommitToday, p.CommitTotal, p.ContinuesDayNum)
+		req.DingDing()
+		p.CommitTotal = numOfCommits
+		return nil
+	}
+	//not first time
 	numOfCommitsOfToday := numOfCommits - p.CommitTotal
 	p.CommitTotal = numOfCommits
-	if p.CommitToday == 0 {
-		//still not push
-		p.CommitToday = numOfCommitsOfToday
-		//push ding talk group
-	} else {
-		p.CommitToday += numOfCommitsOfToday
-		//push to ding talk for new push
+	if numOfCommitsOfToday != 0 {
+		p.ContinuesDayNum++
+		if p.CommitToday == 0 {
+			p.CommitToday = numOfCommitsOfToday
+		} else {
+			p.CommitToday += numOfCommitsOfToday
+		}
+		var req ding.Req
+		req.MakeMessage(p.Name, GlobalConfig.DingUrl, "有新提交了", p.CommitToday, p.CommitTotal, p.ContinuesDayNum)
+		req.DingDing()
 	}
 	return nil
 }

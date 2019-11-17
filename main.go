@@ -3,12 +3,16 @@ package main
 import (
 	src "APS/src"
 	router "APS/src/api/router"
+	"flag"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
+var (
+	cfg = flag.String("config", "", "APS config file path.")
+)
 
 // @title APS API
 // @version 1.0
@@ -23,6 +27,10 @@ import (
 // @BasePath /api/v1
 func main() {
 	// Create the Gin engine.
+
+	if err := src.InitConfig(*cfg); err != nil {
+		panic(err)
+	}
 	g := gin.New()
 	middlewares := []gin.HandlerFunc{}
 

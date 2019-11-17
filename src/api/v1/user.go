@@ -2,7 +2,6 @@ package v1
 
 import (
 	src "APS/src"
-	"fmt"
 	vm "APS/src/api/vm"
 
 	"github.com/gin-gonic/gin"

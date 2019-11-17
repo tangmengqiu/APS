@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc
+	github.com/fsnotify/fsnotify v1.4.7
 	github.com/gin-gonic/gin v1.4.0
 	github.com/google/go-github/v28 v28.1.1
 	github.com/sirupsen/logrus v1.4.2
