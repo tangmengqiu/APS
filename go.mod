@@ -13,6 +13,4 @@ require (
 	github.com/swaggo/swag v1.5.1
 	golang.org/x/net v0.0.0-20191112182307-2180aed22343 // indirect
 	golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
-	google.golang.org/appengine v1.1.0
-	gopkg.in/olahol/melody.v1 v1.0.0-20170518105555-d52139073376
 )

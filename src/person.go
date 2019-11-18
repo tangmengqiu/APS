@@ -3,7 +3,6 @@ package src
 import (
 	vm "APS/src/api/vm"
 	"context"
-	"fmt"
 
 	ding "APS/tools/ding"
 	"github.com/google/go-github/v28/github"
@@ -75,7 +74,6 @@ func (p *Person) GetCommitOfToday() error {
 	numOfCommitsOfToday := numOfCommits - p.CommitTotal
 	p.CommitTotal = numOfCommits
 	if numOfCommitsOfToday != 0 {
-		p.ContinuesDayNum++
 		if p.CommitToday == 0 {
 			p.CommitToday = numOfCommitsOfToday
 		} else {

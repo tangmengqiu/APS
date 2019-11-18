@@ -43,7 +43,7 @@ func main() {
 		middlewares...,
 	)
 
-	go src.CheckAt24()
+	go src.CheckAt24(src.Check)
 	go src.CheckCommit()
 	fmt.Println(http.ListenAndServe(":8080", g).Error())
 	for {
