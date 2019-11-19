@@ -2,9 +2,13 @@ package src
 
 import (
 	vm "APS/src/api/vm"
-	"context"
-
+	"APS/tools"
 	ding "APS/tools/ding"
+	"APS/tools/storage"
+	"context"
+	"encoding/json"
+	"errors"
+
 	"github.com/google/go-github/v28/github"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
@@ -12,6 +16,7 @@ import (
 
 type Person struct {
 	ID              int
+	UUID            string
 	Name            string
 	Token           string
 	Repo            string
@@ -23,6 +28,8 @@ type Person struct {
 
 var PersonPipe []*Person
 
+var MDataBase storage.Storage
+
 func GetUsers() []*Person {
 	return PersonPipe
 }
@@ -31,6 +38,7 @@ func NewPerson(_name, _token, _repo string) Person {
 
 	p := Person{
 		ID:    len(PersonPipe),
+		UUID:  tools.StringUUID(),
 		Name:  _name,
 		Token: _token,
 		Repo:  _repo,
@@ -38,10 +46,26 @@ func NewPerson(_name, _token, _repo string) Person {
 	PersonPipe = append(PersonPipe, &p)
 	return p
 }
-func AddUser(u vm.ReqUser) error {
-	NewPerson(u.Name, u.Token, u.Repo)
 
+func AddUser(u vm.ReqUser) error {
+	p := NewPerson(u.Name, u.Token, u.Repo)
+	//put in storage
+	if err := MDataBase.AddOrUpdate(p.UUID, p); err != nil {
+		logrus.WithField("event", "add user").Error(err.Error())
+		return err
+	}
 	return nil
+}
+
+func DeleteUser(name string) error {
+	for idx, p := range PersonPipe {
+		if p.Name == name {
+			//delete
+			PersonPipe = append(PersonPipe[:idx], PersonPipe[idx+1:]...)
+			return nil
+		}
+	}
+	return errors.New("no such user nameed: " + name)
 }
 
 func (p *Person) GetCommitOfToday() error {
@@ -64,10 +88,13 @@ func (p *Person) GetCommitOfToday() error {
 	if p.CommitTotal == 0 {
 		//first add this user
 		//push welcome msg
+		if err := MDataBase.AddOrUpdate(p.UUID, p); err != nil {
+			logrus.WithField("event", "add user").Error(err.Error())
+			return err
+		}
 		var req ding.Req
 		req.MakeMessage(p.Name, GlobalConfig.DingUrl, "欢迎新加入的朋友", p.CommitToday, p.CommitTotal, p.ContinuesDayNum)
 		req.DingDing()
-		p.CommitTotal = numOfCommits
 		return nil
 	}
 	//not first time
@@ -79,8 +106,12 @@ func (p *Person) GetCommitOfToday() error {
 		} else {
 			p.CommitToday += numOfCommitsOfToday
 		}
+		if err := MDataBase.AddOrUpdate(p.UUID, p); err != nil {
+			logrus.WithField("event", "add user").Error(err.Error())
+			return err
+		}
 		var req ding.Req
-		req.MakeMessage(p.Name, GlobalConfig.DingUrl, "有新提交了", p.CommitToday, p.CommitTotal, p.ContinuesDayNum)
+		req.MakeMessage(p.Name, GlobalConfig.DingUrl, p.Name+" 有新提交了", p.CommitToday, p.CommitTotal, p.ContinuesDayNum)
 		req.DingDing()
 	}
 	return nil
@@ -95,4 +126,24 @@ func (p Person) CheckStatusAt24Clock() {
 		// ding ding push
 		p.ContinuesDayNum++
 	}
+	if err := MDataBase.AddOrUpdate(p.UUID, p); err != nil {
+		logrus.WithField("event", "add user").Error(err.Error())
+	}
+	var req ding.Req
+	req.MakeMessage(p.Name, GlobalConfig.DingUrl, "每日监督: "+p.Name, p.CommitToday, p.CommitTotal, p.ContinuesDayNum)
+	req.DingDing()
+}
+
+func SyncMemoryToUsers() {
+	allUsers := MDataBase.GetAll()
+	for _, dataByte := range allUsers {
+		p := new(Person)
+		err := json.Unmarshal(dataByte, p)
+		if err != nil {
+			logrus.Error("SyncMemoryToUsers Unmarshal err", err)
+			continue
+		}
+		PersonPipe = append(PersonPipe, p)
+	}
+	logrus.Info("Sync Memory To Db Ok")
 }

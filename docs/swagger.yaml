@@ -42,6 +42,32 @@ paths:
       summary: get all user
       tags:
       - 用户
+  /user/{user_name}:
+    delete:
+      consumes:
+      - application/json
+      description: delete  user
+      operationId: delete user
+      parameters:
+      - description: user_name
+        in: path
+        name: user_name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+        "404":
+          description: failure
+          schema:
+            type: string
+      summary: delete user
+      tags:
+      - 用户
   /user/add:
     post:
       consumes:

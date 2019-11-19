@@ -3,11 +3,13 @@ package main
 import (
 	src "APS/src"
 	router "APS/src/api/router"
+	"APS/tools/storage"
 	"flag"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -42,12 +44,18 @@ func main() {
 		// Middlwares.
 		middlewares...,
 	)
+	var err error
+	src.MDataBase, err = storage.NewStorage()
+	if err != nil {
+		logrus.WithField("event", "new MDataBase")
+		return
+	}
 
+	src.SyncMemoryToUsers()
 	go src.CheckAt24(src.Check)
 	go src.CheckCommit()
 	fmt.Println(http.ListenAndServe(":8080", g).Error())
 	for {
 
 	}
-	return
 }

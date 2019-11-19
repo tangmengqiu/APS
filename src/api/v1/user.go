@@ -51,3 +51,26 @@ func AddUser(c *gin.Context) {
 	vm.MakeSuccess(c, 200, "添加用户成功")
 	return
 }
+
+// DeleteUser delete users
+// @Summary  delete user
+// @Tags 用户
+// @Description delete  user 
+// @ID  delete user
+// @Accept  json
+// @Produce  json
+// @Param user_name path string true "user_name"
+// @Success 200 {string} string "success"
+// @Failure 404 {string} string "failure"
+// @Router /user/{user_name} [delete]
+func DeleteUser(c *gin.Context) {
+	//auth
+	userName := c.Params.ByName("user_name")
+	if err := src.DeleteUser(userName); err != nil {
+		logrus.Info(err.Error())
+		vm.MakeFail(c, 500, err.Error())
+		return
+	}
+	vm.MakeSuccess(c, 200, "删除: "+userName+" 成功")
+	return
+}
