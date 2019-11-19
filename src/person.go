@@ -88,13 +88,14 @@ func (p *Person) GetCommitOfToday() error {
 	if p.CommitTotal == 0 {
 		//first add this user
 		//push welcome msg
+		var req ding.Req
+		req.MakeMessage(p.Name, GlobalConfig.DingUrl, "欢迎新加入的朋友", p.CommitToday, p.CommitTotal, p.ContinuesDayNum)
+		req.DingDing()
+		p.CommitTotal = numOfCommits
 		if err := MDataBase.AddOrUpdate(p.UUID, p); err != nil {
 			logrus.WithField("event", "add user").Error(err.Error())
 			return err
 		}
-		var req ding.Req
-		req.MakeMessage(p.Name, GlobalConfig.DingUrl, "欢迎新加入的朋友", p.CommitToday, p.CommitTotal, p.ContinuesDayNum)
-		req.DingDing()
 		return nil
 	}
 	//not first time
