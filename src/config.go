@@ -59,6 +59,6 @@ func (c *Config) initConfig() error {
 func (c *Config) watchConfig() {
 	viper.WatchConfig()
 	viper.OnConfigChange(func(e fsnotify.Event) {
-		logrus.Info("Config file changed: %s", e.Name)
+		logrus.Infof("Config file changed: %s", e.Name)
 	})
 }
