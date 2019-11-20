@@ -8,7 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-
+	"time"
 	"github.com/google/go-github/v28/github"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
@@ -24,6 +24,7 @@ type Person struct {
 	CommitTotal     int
 	DelayNum        int
 	ContinuesDayNum int
+	UpdateAt 		string 
 }
 
 var PersonPipe []*Person
@@ -62,6 +63,9 @@ func DeleteUser(name string) error {
 		if p.Name == name {
 			//delete
 			PersonPipe = append(PersonPipe[:idx], PersonPipe[idx+1:]...)
+			if(!MDataBase.Delete(p.UUID)){
+				return errors.New("delete user in bolt failed")
+			}
 			return nil
 		}
 	}
@@ -85,13 +89,14 @@ func (p *Person) GetCommitOfToday() error {
 		return err
 	}
 	numOfCommits := len(commits)
-	if p.CommitTotal == 0 {
+	if p.UpdateAt == "" {
 		//first add this user
 		//push welcome msg
 		var req ding.Req
 		req.MakeMessage(p.Name, GlobalConfig.DingUrl, "欢迎新加入的朋友", p.CommitToday, p.CommitTotal, p.ContinuesDayNum)
 		req.DingDing()
 		p.CommitTotal = numOfCommits
+		p.UpdateAt = time.Now().Format("2006-01-02 15:04:05")
 		if err := MDataBase.AddOrUpdate(p.UUID, p); err != nil {
 			logrus.WithField("event", "add user").Error(err.Error())
 			return err
@@ -107,6 +112,7 @@ func (p *Person) GetCommitOfToday() error {
 		} else {
 			p.CommitToday += numOfCommitsOfToday
 		}
+		p.UpdateAt = time.Now().Format("2006-01-02 15:04:05")
 		if err := MDataBase.AddOrUpdate(p.UUID, p); err != nil {
 			logrus.WithField("event", "add user").Error(err.Error())
 			return err
@@ -146,5 +152,5 @@ func SyncMemoryToUsers() {
 		}
 		PersonPipe = append(PersonPipe, p)
 	}
-	logrus.Info("Sync Memory To Db Ok")
+	logrus.Info("Sync Memory From Db Ok")
 }
