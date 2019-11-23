@@ -140,7 +140,7 @@ func (p *Person) GetCommitOfToday() error {
 	return nil
 }
 
-func (p Person) CheckStatusAt24Clock() {
+func (p *Person) CheckStatusAt24Clock() {
 	if p.CommitToday == 0 {
 		//ding ding push
 		p.DelayNum++
