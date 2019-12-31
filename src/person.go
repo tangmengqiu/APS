@@ -8,7 +8,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/google/go-github/v28/github"
@@ -38,7 +37,7 @@ func GetUsers() []*Person {
 	return PersonPipe
 }
 
-func NewPerson(_name, _token, _repo string) Person {
+func NewPerson(_name, _token, _repo string) *Person {
 
 	p := Person{
 		ID:    len(PersonPipe),
@@ -48,14 +47,13 @@ func NewPerson(_name, _token, _repo string) Person {
 		Repo:  _repo,
 	}
 	PersonPipe = append(PersonPipe, &p)
-	return p
+	return &p
 }
 
 func AddUser(u vm.ReqUser) error {
 	p := NewPerson(u.Name, u.Token, u.Repo)
-	//put in storage
-	if err := MDataBase.AddOrUpdate(p.UUID, p); err != nil {
-		logrus.WithField("event", "add user").Error(err.Error())
+
+	if err := p.InitUserCommitInfo(); err != nil {
 		return err
 	}
 	return nil
@@ -75,6 +73,48 @@ func DeleteUser(name string) error {
 	return errors.New("no such user nameed: " + name)
 }
 
+func (p *Person) InitUserCommitInfo() error {
+	ctx := context.Background()
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: p.Token},
+	)
+	tc := oauth2.NewClient(oauth2.NoContext, ts)
+	var lop = github.ListOptions{
+		Page:    1,
+		PerPage: 500,
+	}
+	opt := github.CommitsListOptions{
+		ListOptions: lop,
+	}
+	client := github.NewClient(tc)
+	commits, _, err := client.Repositories.ListCommits(ctx, p.Name, p.Repo, &opt)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"event": "Get github commits",
+		}).Error(err.Error())
+		return err
+	}
+	numOfCommits := len(commits)
+	if numOfCommits == 0 {
+		return errors.New("禁止空仓库加入")
+	}
+	latestCommit := commits[0]
+	p.CommitTotal = numOfCommits
+	p.CommitToday = 0
+	p.ContinuesDayNum = 0
+	p.LastCommitSHA = *(latestCommit.SHA)
+
+	var req ding.Req
+	req.MakeMessage(p.Name, GlobalConfig.DingUrl, "欢迎新加入的朋友", p.CommitToday, p.CommitTotal, p.ContinuesDayNum)
+	req.DingDing()
+	p.UpdateAt = time.Now().Format("2006-01-02 15:04:05")
+	if err := MDataBase.AddOrUpdate(p.UUID, p); err != nil {
+		logrus.WithField("event", "add user").Error(err.Error())
+		return err
+	}
+	return nil
+}
+
 func (p *Person) GetCommitOfToday() error {
 
 	ctx := context.Background()
@@ -82,9 +122,15 @@ func (p *Person) GetCommitOfToday() error {
 		&oauth2.Token{AccessToken: p.Token},
 	)
 	tc := oauth2.NewClient(oauth2.NoContext, ts)
-
+	var lop = github.ListOptions{
+		Page:    1,
+		PerPage: 3,
+	}
+	opt := github.CommitsListOptions{
+		ListOptions: lop,
+	}
 	client := github.NewClient(tc)
-	commits, _, err := client.Repositories.ListCommits(ctx, p.Name, p.Repo, nil)
+	commits, _, err := client.Repositories.ListCommits(ctx, p.Name, p.Repo, &opt)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"event": "Get github commits",
@@ -96,22 +142,8 @@ func (p *Person) GetCommitOfToday() error {
 		return nil
 	}
 	latestCommit := commits[0]
-	// never checked =>
-	if p.UpdateAt == "" {
-		var req ding.Req
-		req.MakeMessage(p.Name, GlobalConfig.DingUrl, "欢迎新加入的朋友", p.CommitToday, p.CommitTotal, p.ContinuesDayNum)
-		req.DingDing()
-		p.CommitTotal = numOfCommits
-		p.LastCommitSHA = *(latestCommit.SHA)
-		p.UpdateAt = time.Now().Format("2006-01-02 15:04:05")
-		if err := MDataBase.AddOrUpdate(p.UUID, p); err != nil {
-			logrus.WithField("event", "add user").Error(err.Error())
-			return err
-		}
-		return nil
-	}
 
-	//has been checked
+	// new commits
 	if *latestCommit.SHA != p.LastCommitSHA {
 		//新提交了
 		cc, _, err := client.Repositories.CompareCommits(ctx, p.Name, p.Repo, p.LastCommitSHA, *latestCommit.SHA)
@@ -170,70 +202,4 @@ func SyncMemoryToUsers() {
 		PersonPipe = append(PersonPipe, p)
 	}
 	logrus.Info("Sync Memory From Db Ok")
-}
-
-func GetCommit() error {
-	p := Person{
-		Name:          "tangmengqiu",
-		Repo:          "leetcode",
-		Token:         "",
-		LastCommitSHA: "83046bbd16850377b315b12d1cbc3cef7f10b277",
-		UpdateAt:      "0.0.0.0",
-	}
-	ctx := context.Background()
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: p.Token},
-	)
-	tc := oauth2.NewClient(oauth2.NoContext, ts)
-
-	client := github.NewClient(tc)
-	commits, _, err := client.Repositories.ListCommits(ctx, p.Name, p.Repo, nil)
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"event": "Get github commits",
-		}).Error(err.Error())
-		return err
-	}
-	numOfCommits := len(commits)
-	if numOfCommits == 0 {
-		return nil
-	}
-	latestCommit := commits[0]
-	fmt.Println(*latestCommit.SHA)
-	fmt.Println(*latestCommit.Commit.Message)
-	// never checked =>
-	if p.UpdateAt == "" {
-		var req ding.Req
-		req.MakeMessage(p.Name, GlobalConfig.DingUrl, "欢迎新加入的朋友", p.CommitToday, p.CommitTotal, p.ContinuesDayNum)
-		req.DingDing()
-		p.CommitTotal = numOfCommits
-		p.LastCommitSHA = *(latestCommit.SHA)
-		p.UpdateAt = time.Now().Format("2006-01-02 15:04:05")
-		if err := MDataBase.AddOrUpdate(p.UUID, p); err != nil {
-			logrus.WithField("event", "add user").Error(err.Error())
-			return err
-		}
-		return nil
-	}
-
-	//has been checked
-	if *latestCommit.SHA != p.LastCommitSHA {
-		//新提交了
-		cc, _, err := client.Repositories.CompareCommits(ctx, p.Name, p.Repo, p.LastCommitSHA, *latestCommit.SHA)
-		if err != nil {
-			logrus.WithFields(logrus.Fields{
-				"event": "Get github commits compare",
-			}).Error(err.Error())
-			return err
-		}
-		numOfCommitsOfToday := *cc.TotalCommits
-		if numOfCommitsOfToday != 0 {
-			p.CommitToday += numOfCommitsOfToday
-			p.LastCommitSHA = *latestCommit.SHA
-			p.CommitTotal += numOfCommitsOfToday
-			p.UpdateAt = time.Now().Format("2006-01-02 15:04:05")
-		}
-	}
-	fmt.Println(p)
-	return nil
 }
